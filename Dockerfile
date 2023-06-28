@@ -1,4 +1,5 @@
-FROM ubuntu:jammy
+ARG DIST
+FROM ubuntu:${DIST}
 
 RUN set -eu ; \
   export DEBIAN_FRONTEND=noninteractive ; \
