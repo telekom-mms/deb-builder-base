@@ -37,4 +37,7 @@ package_clean:
 	-rm debian/debhelper-build-stamp debian/files
 	-rm ../$(lastword $(subst /, ,$(shell pwd)))?*
 ```
-To call `git-dch.sh` within `Makefile` and set a version/tag name use: `make package_build TAG=1.0.0`
+To call `git-dch.sh` within `Makefile` and set a version/tag name use: `make package_build TAG='-t 1.0.0'`
+
+### Example package
+Under [example-package](/example-package/) you can find a complete example for a debian package, which can be build with docker and has auto generated changelog included.

@@ -1,0 +1,12 @@
+Source: example-package
+Section: misc
+Priority: important
+Maintainer: The MMS Linux Dev Team <mmslinux-dev@t-systems-mms.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+
+Package: example-package
+Architecture: amd64
+Depends: ${misc:Depends}
+Description: This is a example title.
+	And an example description.
