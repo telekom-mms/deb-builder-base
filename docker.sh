@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
 set -e
 
@@ -12,18 +12,22 @@ DIST=jammy
 function help(){
   cat <<Here
 
-git-dch.sh
+docker.sh
   -d <distribution> (jammy, ...)
+  -t <tag>
 
 Here
   exit 1
 }
 
-while getopts ':d:' option
+while getopts ':d:t:' option
 do
   case "${option}" in
     'd')
       DIST="${OPTARG}"
+      ;;
+    't')
+      TAG="-t ${OPTARG}"
       ;;
     :)
       echo "-${OPTARG} requires an argument."
@@ -37,4 +41,4 @@ done
 
 DIR=$(basename $(pwd))
 cd ..
-docker run --user=$UID --rm -v ./:/work "ghcr.io/telekom-mms/deb-builder-base:$DIST" /usr/bin/bash -c "cd /work/$DIR && make package_build DIST='-d $DIST' && cp ../*.deb . && make package_clean"
+docker run --user=$UID --rm -v ./:/work "ghcr.io/telekom-mms/deb-builder-base:$DIST" /usr/bin/bash -c "cd /work/$DIR && make package_build DIST='-d $DIST' TAG='$TAG' && cp ../*.deb . && make package_clean"
