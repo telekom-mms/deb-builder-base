@@ -95,6 +95,11 @@ fi
 
 # generate changelog
 rm debian/changelog 2>/dev/null || true
+# Merge historic changelog if it exists
+if [[ -s debian/changelog.legacy ]]
+then
+	cp debian/changelog.legacy debian/changelog
+fi
 git tag -l | sort -V | while read CUR_TAG; do
   appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
