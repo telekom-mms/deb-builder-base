@@ -70,9 +70,26 @@ appendChangelog () {
   done
 }
 
+validateVersion () {
+	local got_version="${1}"
+	# By internal convention, tag must have a leading v
+	if [[ ! "${got_version}" =~ ^v ]]
+	then
+		printf "%s: Tag misses leading \"v\".\n" "${got_version}"
+		return 1
+	fi
+	# Check if remaining version, without the leading v, is a valid version for Debian
+	if ! dpkg --validate-version "${got_version#v}"
+	then
+		printf "%s/%s: Faild dpkg --validate-version\n" "${got_version}" "${got_version#v}"
+		return 1
+	fi
+	return 0
+}
+
 # check tag name
 if [[ "$TAG" != "" ]] ; then
-  if ! [[ "$TAG" =~ ^v?[0-9]+(\.[0-9]+){0,2}$ ]] ; then
+  if ! validateVersion "$TAG" ; then
     echo "[$TAG] is not a valid tag name."
     exit 1
   fi
@@ -81,7 +98,7 @@ if [[ "$TAG" != "" ]] ; then
     RANGE="$([[ "$LAST_TAG" != "" ]] && echo "$LAST_TAG.." || echo "")HEAD"
   fi
 else
-  if [[ "$LAST_TAG" != "" ]] && [[ "$LAST_TAG" =~ ^v?[0-9]+(\.[0-9]+){0,2}$ ]] ; then
+  if [[ "$LAST_TAG" != "" ]] && validateVersion "$LAST_TAG"; then
     VERSION_PARTS=(${LAST_TAG//./ })
     VERSION_PARTS[-1]=$((${VERSION_PARTS[-1]}+1))
     TAG="$(IFS=. ; echo "${VERSION_PARTS[*]}")"
