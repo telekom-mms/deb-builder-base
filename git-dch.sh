@@ -22,9 +22,41 @@ if ! [[ -f "debian/control" ]] ; then
   exit 1
 fi
 
+function dpkg_version_isgreater() {
+  local first="${1}"
+  local than_second="${2}"
+  if dpkg --compare-versions "${first}" gt "${than_second}"; then
+    return 0
+  fi
+  return 1
+}
+
+function sort_by_dpkg_version() {
+  declare -a data
+  while read -r line; do
+    data+=("${line}")
+  done
+
+  # Bubble sort the array of lines
+  local len=${#data[@]}
+  for ((i = 0; i<len; i++)); do
+    for ((j = 0; j<len-i-1; j++)); do
+      if dpkg_version_isgreater "${data[j]}" "${data[$((j+1))]}"; then
+        local swapval="${data[j]}"
+        data[$j]="${data[$((j+1))]}"
+        data[$((j+1))]="${swapval}"
+      fi
+    done
+  done
+
+  for ((i = 0; i<len; i++)); do
+    printf "%s\n" "${data[i]}"
+  done
+}
+
 DIST=jammy
 PKG_NAME=$(awk '/^Package:/ { print $2 }' debian/control)
-LAST_TAG=$(git tag -l | sort -V | tail -1)
+LAST_TAG=$(git tag -l | sort_by_dpkg_version | tail -1)
 
 function help(){
   cat <<Here
@@ -72,16 +104,10 @@ appendChangelog () {
 
 validateVersion () {
 	local got_version="${1}"
-	# By internal convention, tag must have a leading v
-	if [[ ! "${got_version}" =~ ^v ]]
-	then
-		printf "%s: Tag misses leading \"v\".\n" "${got_version}"
-		return 1
-	fi
 	# Check if remaining version, without the leading v, is a valid version for Debian
-	if ! dpkg --validate-version "${got_version#v}"
+	if ! dpkg --validate-version "${got_version}"
 	then
-		printf "%s/%s: Faild dpkg --validate-version\n" "${got_version}" "${got_version#v}"
+		printf "%s: Faild dpkg --validate-version\n" "${got_version}" >&2
 		return 1
 	fi
 	return 0
@@ -89,25 +115,26 @@ validateVersion () {
 
 # check tag name
 if [[ "$TAG" != "" ]] ; then
+  # This is a tagged version
   if ! validateVersion "$TAG" ; then
     echo "[$TAG] is not a valid tag name."
     exit 1
   fi
-  VERSION="${TAG#v}"
+  VERSION="${TAG}"
   if [[ "$LAST_TAG" != "$TAG" ]] ; then
     RANGE="$([[ "$LAST_TAG" != "" ]] && echo "$LAST_TAG.." || echo "")HEAD"
   fi
 else
+  # This is not a tagged version - Derive prerelease version from current time
   if [[ "$LAST_TAG" != "" ]] && validateVersion "$LAST_TAG"; then
-    VERSION_PARTS=(${LAST_TAG//./ })
-    VERSION_PARTS[-1]=$((${VERSION_PARTS[-1]}+1))
-    TAG="$(IFS=. ; echo "${VERSION_PARTS[*]}")"
+    TAG="${LAST_TAG}"
     RANGE="$LAST_TAG..HEAD"
   else
+    # Fallback if no previous tagged version available
     TAG="0.0.1"
     RANGE="HEAD"
   fi
-  VERSION="${TAG#v}~n$(date +%s)"
+  VERSION="${TAG}+n$(date +%s)"
 fi
 
 # generate changelog
@@ -117,7 +144,7 @@ if [[ -s debian/changelog.legacy ]]
 then
 	cp debian/changelog.legacy debian/changelog
 fi
-git tag -l | sort -V | while read CUR_TAG; do
+git tag -l | sort_by_dpkg_version | while read CUR_TAG; do
   appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
 done
