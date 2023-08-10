@@ -56,7 +56,7 @@ function sort_by_dpkg_version() {
 
 DIST=jammy
 PKG_NAME=$(awk '/^Package:/ { print $2 }' debian/control)
-LAST_TAG=$(git tag -l | sort_by_dpkg_version | tail -1)
+LAST_TAG=$(git tag -l | tail -1)
 
 function help(){
   cat <<Here
@@ -97,7 +97,7 @@ appendChangelog () {
 
   cmd="dch $([[ -e 'debian/changelog' ]] || echo '--create') --distribution $DIST --package $PKG_NAME --newversion $version-1 --controlmaint"
   git log --pretty=tformat:'%s' $range | while read entry; do
-    $cmd $entry
+    $cmd "${entry}"
     cmd="dch --append --controlmaint"
   done
 }
@@ -144,7 +144,7 @@ if [[ -s debian/changelog.legacy ]]
 then
 	cp debian/changelog.legacy debian/changelog
 fi
-git tag -l | sort_by_dpkg_version | while read CUR_TAG; do
+git tag -l | while read CUR_TAG; do
   appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
 done
