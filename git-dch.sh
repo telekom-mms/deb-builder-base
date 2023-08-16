@@ -103,8 +103,28 @@ appendChangelog () {
 }
 
 validateVersion () {
+	# Contents of current tag or previous tag
 	local got_version="${1}"
-	# Check if remaining version, without the leading v, is a valid version for Debian
+	# Enforce conventions for tagged commits in MMS packages
+	if [[ "${PKG_NAME}" =~ ^mms- ]]
+	then
+		case "${DIST}" in
+			'focal')   [[ "${got_version}" =~ ^2004- ]] || mistagged=1 ;;
+			'groovy')  [[ "${got_version}" =~ ^2010- ]] || mistagged=1 ;;
+			'hirsute') [[ "${got_version}" =~ ^2104- ]] || mistagged=1 ;;
+			'impish')  [[ "${got_version}" =~ ^2110- ]] || mistagged=1 ;;
+			'jammy')   [[ "${got_version}" =~ ^2204- ]] || mistagged=1 ;;
+			'kinetic') [[ "${got_version}" =~ ^2210- ]] || mistagged=1 ;;
+			'lunar')   [[ "${got_version}" =~ ^2304- ]] || mistagged=1 ;;
+			'mantic')  [[ "${got_version}" =~ ^2310- ]] || mistagged=1 ;;
+		esac
+	fi
+	if [[ -v mistagged ]]
+	then
+		printf "Tag/Version: %s - not suitable for dist: %s\n" "${got_version}" "${DIST}"
+		return 1
+	fi
+	# Check if version is a valid version for Debian in general
 	if ! dpkg --validate-version "${got_version}"
 	then
 		printf "%s: Faild dpkg --validate-version\n" "${got_version}" >&2
@@ -130,9 +150,8 @@ else
     TAG="${LAST_TAG}"
     RANGE="$LAST_TAG..HEAD"
   else
-    # Fallback if no previous tagged version available
-    TAG="0.0.1"
-    RANGE="HEAD"
+    echo "No tag for commit and no previous tag to derive prerelease from. Aborting."
+    exit 1
   fi
   VERSION="${TAG}+n$(date +%s)"
 fi
