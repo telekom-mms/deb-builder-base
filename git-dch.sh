@@ -22,6 +22,7 @@ if ! [[ -f "debian/control" ]] ; then
   exit 1
 fi
 
+# Helper function for sort_by_dpkg_version
 function dpkg_version_isgreater() {
   local first="${1}"
   local than_second="${2}"
@@ -31,13 +32,15 @@ function dpkg_version_isgreater() {
   return 1
 }
 
+# Bubble sort the array of lines, using dpkg_version_isgreater as helper function
+# https://www.geeksforgeeks.org/sorting-the-array-in-bash-using-bubble-sort/
+# https://github.com/mschmitt/dpkg-sort-versions
 function sort_by_dpkg_version() {
   declare -a data
   while read -r line; do
     data+=("${line}")
   done
 
-  # Bubble sort the array of lines
   local len=${#data[@]}
   for ((i = 0; i<len; i++)); do
     for ((j = 0; j<len-i-1; j++)); do
@@ -54,8 +57,11 @@ function sort_by_dpkg_version() {
   done
 }
 
+# Default dist in case none is specified on command line
 DIST=jammy
 PKG_NAME=$(awk '/^Package:/ { print $2 }' debian/control)
+# Fixme? - Extract only tags matching the -d distribution name
+# Will need to be moved behind getopts
 LAST_TAG=$(git tag --list --merged | tail -1)
 
 function help(){
@@ -150,6 +156,7 @@ else
     TAG="${LAST_TAG}"
     RANGE="$LAST_TAG..HEAD"
   else
+    # The first commit needs a tag, otherwise no prerelease version can be derived
     echo "No tag for commit and no previous tag to derive prerelease from. Aborting."
     exit 1
   fi
@@ -157,12 +164,13 @@ else
 fi
 
 # generate changelog
-rm debian/changelog 2>/dev/null || true
+rm -v -f debian/changelog
 # Merge historic changelog if it exists
 if [[ -s debian/changelog.legacy ]]
 then
 	cp debian/changelog.legacy debian/changelog
 fi
+# Fixme? - Extract only tags matching the -d distribution name
 git tag --list --merged | while read CUR_TAG; do
   appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
