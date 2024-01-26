@@ -7,6 +7,11 @@ if ! which git &> /dev/null ; then
   exit 1
 fi
 
+if ! which ifne &> /dev/null ; then
+  echo "ifne (from moreutils) is required."
+  exit 1
+fi
+
 if ! which dch &> /dev/null ; then
   echo "debchange is required."
   exit 1
