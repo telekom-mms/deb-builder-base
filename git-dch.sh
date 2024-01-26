@@ -57,25 +57,26 @@ function sort_by_dpkg_version() {
   done
 }
 
-# Default dist in case none is specified on command line
-DIST=jammy
 PKG_NAME=$(awk '/^Package:/ { print $2 }' debian/control)
-# Fixme? - Extract only tags matching the -d distribution name
-# Will need to be moved behind getopts
-LAST_TAG=$(git tag --list --merged | tail -1)
 
 function help(){
   cat <<Here
 
 git-dch.sh
-  -d <distribution> (jammy, ...)
+  -d <distribution> (noble, ...)
   -t <tag>
+  -p <tag-pattern, e.g. 2404-*>
 
 Here
   exit 1
 }
 
-while getopts ':d:t:' option
+# Default dist in case none is specified on command line
+DIST=noble
+# Default tag pattern
+PATTERN='*'
+
+while getopts ':d:p:t:' option
 do
   case "${option}" in
     'd')
@@ -83,6 +84,9 @@ do
       ;;
     't')
       TAG="${OPTARG}"
+      ;;
+    'p')
+      PATTERN="${OPTARG}"
       ;;
     :)
       echo "-${OPTARG} requires an argument."
@@ -139,6 +143,8 @@ validateVersion () {
 	return 0
 }
 
+LAST_TAG="$(git tag --list "${PATTERN}" | tail -1)"
+
 # check tag name
 if [[ "$TAG" != "" ]] ; then
   # This is a tagged version
@@ -170,8 +176,7 @@ if [[ -s debian/changelog.legacy ]]
 then
 	cp debian/changelog.legacy debian/changelog
 fi
-# Fixme? - Extract only tags matching the -d distribution name
-git tag --list --merged | while read CUR_TAG; do
+git tag --list "${PATTERN}" | while read CUR_TAG; do
   appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
 done
