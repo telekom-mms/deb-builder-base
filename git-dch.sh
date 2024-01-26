@@ -106,7 +106,7 @@ appendChangelog () {
   local cmd
 
   cmd="dch $([[ -e 'debian/changelog' ]] || echo '--create') --distribution $DIST --package $PKG_NAME --newversion $version-1 --controlmaint"
-  git log --pretty=tformat:'%s' $range | while read entry; do
+  git log --pretty=tformat:'%s' "${range}" | ifne -n echo "No changes." | while read -r entry; do
     $cmd "${entry}"
     cmd="dch --append --controlmaint"
   done
@@ -123,7 +123,7 @@ validateVersion () {
 	return 0
 }
 
-LAST_TAG="$(git tag --list "${PATTERN}" | tail -1)"
+LAST_TAG="$(git tag --list "${PATTERN}" | sort_by_dpkg_version | tail -1)"
 
 # check tag name
 if [[ "$TAG" != "" ]] ; then
@@ -156,10 +156,10 @@ if [[ -s debian/changelog.legacy ]]
 then
 	cp debian/changelog.legacy debian/changelog
 fi
-git tag --list "${PATTERN}" | while read CUR_TAG; do
-  appendChangelog ${CUR_TAG#v} "$PREV_TAG$CUR_TAG"
+git tag --list "${PATTERN}" | sort_by_dpkg_version | while read -r CUR_TAG; do
+  appendChangelog "${CUR_TAG#v}" "$PREV_TAG$CUR_TAG"
   PREV_TAG="$CUR_TAG.."
 done
-if [[ "$RANGE" != "" ]] && [[ "$(git log $RANGE | wc -l)" != 0 ]] ; then
-  appendChangelog $VERSION $RANGE
+if [[ "$RANGE" != "" ]] && [[ "$(git log "$RANGE" | wc -l)" != 0 ]] ; then
+  appendChangelog "$VERSION" "$RANGE"
 fi
