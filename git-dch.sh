@@ -168,3 +168,7 @@ done
 if [[ "$RANGE" != "" ]] && [[ "$(git log "$RANGE" | wc -l)" != 0 ]] ; then
   appendChangelog "$VERSION" "$RANGE"
 fi
+
+printf "--- Generated Changelog:\n"
+cat debian/changelog
+printf "--- ---:\n"
