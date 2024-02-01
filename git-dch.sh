@@ -162,7 +162,7 @@ then
   cp -v debian/changelog.legacy debian/changelog
   printf -- "--- Legacy Changelog:\n"
   cat debian/changelog
-  printf -- "--- ---:\n"
+  printf -- "--- ---\n"
 fi
 git tag --list "${PATTERN}" | sort_by_dpkg_version | while read -r CUR_TAG; do
   appendChangelog "${CUR_TAG#v}" "$PREV_TAG$CUR_TAG"
@@ -174,4 +174,4 @@ fi
 
 printf -- "--- Generated Changelog:\n"
 cat debian/changelog
-printf -- "--- ---:\n"
+printf -- "--- ---\n"
