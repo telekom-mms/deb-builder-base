@@ -163,6 +163,8 @@ then
   printf -- "--- Legacy Changelog:\n"
   cat debian/changelog
   printf -- "--- ---\n"
+else
+  printf "Info: No debian/changelog.legacy in repository."
 fi
 git tag --list "${PATTERN}" | sort_by_dpkg_version | while read -r CUR_TAG; do
   appendChangelog "${CUR_TAG#v}" "$PREV_TAG$CUR_TAG"
