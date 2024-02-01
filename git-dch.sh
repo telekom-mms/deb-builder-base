@@ -159,7 +159,10 @@ rm -v -f debian/changelog
 # Merge historic changelog if it exists
 if [[ -s debian/changelog.legacy ]]
 then
-	cp debian/changelog.legacy debian/changelog
+  cp -v debian/changelog.legacy debian/changelog
+  printf -- "--- Legacy Changelog:\n"
+  cat debian/changelog
+  printf -- "--- ---:\n"
 fi
 git tag --list "${PATTERN}" | sort_by_dpkg_version | while read -r CUR_TAG; do
   appendChangelog "${CUR_TAG#v}" "$PREV_TAG$CUR_TAG"
