@@ -110,7 +110,7 @@ appendChangelog () {
   local entry
   local cmd
 
-  cmd="dch $([[ -e 'debian/changelog' ]] || echo '--create') --distribution $DIST --package $PKG_NAME --newversion $version-1 --controlmaint"
+  cmd="dch $([[ -e 'debian/changelog' ]] || echo '--create') --distribution $DIST --package $PKG_NAME --newversion $version --controlmaint"
   git log --pretty=tformat:'%s' "${range}" | ifne -n echo "No changes." | while read -r entry; do
     $cmd "${entry}"
     cmd="dch --append --controlmaint"
